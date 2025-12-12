@@ -8,7 +8,7 @@
 
 **PodFlow** is an automated end-to-end machine learning pipeline that identifies topic changes in long-form audio. It ingests podcast RSS feeds, processes audio using a custom Convolutional Recurrent Neural Network (CRNN), and serves timestamped chapters via a responsive web interface.
 
-## 🚀 Key Features
+## Key Features
 
 * **Automated Ingestion:** Daily cron jobs scrape RSS feeds for new episodes from top sports podcasts.
 * **Deep Learning Segmentation:** Uses a custom PyTorch model to detect transition points (chapters) in audio without human intervention.
@@ -17,7 +17,7 @@
 
 ---
 
-## 🏗️ Architecture
+##  Architecture
 
 The system operates on a cyclical 24-hour schedule:
 
@@ -31,7 +31,7 @@ The system operates on a cyclical 24-hour schedule:
 
 ---
 
-## 🧠 The Model (CRNN)
+## The Model (CRNN)
 
 The core of this project is a **Convolutional Recurrent Neural Network** trained to recognize audio boundaries (silence, music transitions, and topic shifts).
 
