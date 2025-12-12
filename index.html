@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Christopher Neale — Portfolio</title>
+  <style>
+    :root{--bg:#0f1724;--card:#0b1220;--muted:#9aa4b2;--accent:#60a5fa;--glass: rgba(255,255,255,0.03)}
+    *{box-sizing:border-box}
+    body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial; margin:0; background:linear-gradient(180deg,#08101a 0%, #0f1724 100%); color:#e6eef6;}
+    header{display:flex;align-items:center;justify-content:space-between;padding:22px 28px;border-bottom:1px solid rgba(255,255,255,0.03);backdrop-filter: blur(6px)}
+    .brand{display:flex;gap:14px;align-items:center}
+    .logo{width:56px;height:56px;border-radius:10px;overflow:hidden;flex-shrink:0;border:1px solid rgba(255,255,255,0.04)}
+    .logo img{width:100%;height:100%;object-fit:cover}
+    nav a{color:var(--muted);text-decoration:none;margin-left:18px;font-weight:600}
+    nav a.active{color:var(--accent)}
+    main{max-width:1100px;margin:28px auto;padding:24px}
+    .hero{display:grid;grid-template-columns:120px 1fr;gap:20px;align-items:start}
+    .photo{width:120px;height:120px;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,0.04)}
+    .photo img{width:100%;height:100%;object-fit:cover}
+    .intro h1{margin:0 0 6px 0;font-size:22px}
+    .intro p{margin:0;color:var(--muted)}
+    .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:18px;border-radius:12px;margin-top:18px;border:1px solid rgba(255,255,255,0.03)}
+    .two-col{display:grid;grid-template-columns:1fr 320px;gap:18px;margin-top:18px}
+    .skills{display:flex;flex-wrap:wrap;gap:8px}
+    .skill{background:var(--glass);padding:6px 10px;border-radius:8px;color:var(--muted);font-size:13px}
+    .section-title{font-weight:700;margin-bottom:8px}
+    .resume-item{margin-bottom:12px}
+    footer{max-width:1100px;margin:40px auto;color:var(--muted);padding:0 24px}
+    pre.note{background:rgba(255,255,255,0.02);padding:12px;border-radius:8px;color:var(--muted);overflow:auto}
+    @media (max-width:880px){.two-col{grid-template-columns:1fr}.hero{grid-template-columns:96px 1fr}}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="logo"><img src="https://media.licdn.com/dms/image/v2/D5603AQGUJ2iHF1koLA/profile-displayphoto-scale_400_400/B56ZrfXlc5LQAo-/0/1764684099067?e=1766620800&v=beta&t=dcNbbnnSB8el4FSCmkOmmC91tFZZJylFJkS87S9BlVE" alt="Christopher Neale photo"></div>
+      <div>
+        <div style="font-weight:800">Christopher Neale</div>
+        <div style="font-size:13px;color:var(--muted)">Data Analyst • Marketing Analytics • ML-driven insights</div>
+      </div>
+    </div>
+    <nav>
+      <a href="#/" data-link>Home</a>
+      <a href="#/resume" data-link>Resume</a>
+      <a href="#/projects" data-link>Projects</a>
+      <a href="/player.html" data-link>Pod Flow</a>
+    </nav>
+  </header>
+
+  <main id="app">
+    <!-- Views are injected here by simple client-side router -->
+  </main>
+
+  <footer>
+    <div>© Christopher Neale — Raleigh, NC · <span style="color:var(--muted)">cjneale.analyst@gmail.com</span></div>
+  </footer>
+
+  <script>
+    // --- Simple client-side router ---
+    const routes = {
+      '/': renderHome,
+      '/resume': renderResume,
+      '/projects': renderProjects,
+      '/project/this-project': renderSpecificProject,
+    }
+
+    function setActiveLink(path){
+      document.querySelectorAll('nav a').forEach(a=>{
+        a.classList.toggle('active', a.getAttribute('href') === '#'+path);
+      })
+    }
+
+    function router(){
+      const hash = location.hash || '#/'
+      const path = hash.slice(1) // e.g. '/resume'
+      setActiveLink(path)
+      const view = routes[path] || (()=>{document.getElementById('app').innerHTML = `<div class="card"><h3>Page not found</h3></div>`})
+      view()
+    }
+
+    // --- Views ---
+    function renderHome(){
+      document.getElementById('app').innerHTML = `
+        <section class="hero card">
+          <div class="photo"><img src="https://media.licdn.com/dms/image/v2/D5603AQGUJ2iHF1koLA/profile-displayphoto-scale_400_400/B56ZrfXlc5LQAo-/0/1764684099067?e=1766620800&v=beta&t=dcNbbnnSB8el4FSCmkOmmC91tFZZJylFJkS87S9BlVE" alt="Chris Neale"></div>
+          <div class="intro">
+            <h1>Hi — I'm Christopher Neale</h1>
+            <p>Innovative data analyst with 4+ years delivering marketing analytics, ML-driven insights, and reporting systems. I build models and dashboards that help teams make measurable decisions.</p>
+            <div style="margin-top:12px" class="skills">
+              <div class="skill">Python</div><div class="skill">SQL</div><div class="skill">Tableau</div><div class="skill">Databricks</div><div class="skill">CRM & CDP</div>
+            </div>
+          </div>
+        </section>
+
+        <div class="two-col">
+          <div>
+            <div class="card">
+              <div class="section-title">About</div>
+              <p style="color:var(--muted)">I'm focused on applying data science to acquisition, lifecycle marketing, and media performance. I enjoy translating technical models into actions marketing teams can execute.</p>
+            </div>
+
+            <div class="card">
+              <div class="section-title">Interests & Hobbies</div>
+              <p style="color:var(--muted)">I love using data to over analyze my golf game and my fantasy football teams.</p>
+            </div>
+          </div>
+
+          <aside>
+            <div class="card">
+              <div class="section-title">Quick Links</div>
+              <div style="color:var(--muted);font-size:14px;line-height:1.6">
+                <div><strong>Email:</strong> cjneale.analyst@gmail.com</div>
+                <div><strong>Location:</strong> Raleigh, NC</div>
+                <div><strong>LinkedIn:</strong> <a href="https://www.linkedin.com/in/christophernealeanalyst/" target="_blank" style="color:var(--accent)">christophernealeanalyst</a></div>
+              </div>
+            </div>
+
+            <div class="card" style="margin-top:12px">
+              <div class="section-title">Skills & Tools</div>
+              <div style="color:var(--muted);font-size:14px;line-height:1.6">
+                Tableau · Power BI · GA4 · Python · SQL · Databricks · Scikit-learn · AWS
+              </div>
+            </div>
+          </aside>
+        </div>
+      `
+    }
+
+    function renderResume(){
+      document.getElementById('app').innerHTML = `
+        <div class="card">
+          <div style="display:flex;gap:18px;align-items:center">
+            <div class="photo" style="width:96px;height:96px"><img src="https://media.licdn.com/dms/image/v2/D5603AQGUJ2iHF1koLA/profile-displayphoto-scale_400_400/B56ZrfXlc5LQAo-/0/1764684099067?e=1766620800&v=beta&t=dcNbbnnSB8el4FSCmkOmmC91tFZZJylFJkS87S9BlVE" alt="Chris"></div>
+            <div>
+              <div style="font-weight:800;font-size:18px">Christopher Neale</div>
+              <div style="color:var(--muted)">Raleigh, NC · cjneale.analyst@gmail.com · 267-421-3426</div>
+            </div>
+          </div>
+
+          <hr style="margin:14px 0;border:none;border-top:1px solid rgba(255,255,255,0.03)">
+
+          <div class="section-title">Summary</div>
+          <p style="color:var(--muted)">Innovative data analyst with 4+ years of experience delivering high-impact marketing analytics, ML-driven insights, and full-cycle reporting solutions. Skilled in predictive modeling, customer segmentation, CRM optimization, and cross-functional collaboration.</p>
+
+          <div class="section-title" style="margin-top:12px">Skills & Tools</div>
+          <div class="skills" style="margin-bottom:12px">
+            <div class="skill">Tableau</div><div class="skill">Power BI</div><div class="skill">Python</div><div class="skill">SQL</div><div class="skill">Databricks</div><div class="skill">Scikit-learn</div>
+          </div>
+
+          <div class="section-title">Experience</div>
+          <div class="resume-item">
+            <div style="font-weight:700">Senior Manager, Marketing Insights and CRM Analytics — flyExculsive (Raleigh, NC)</div>
+            <div style="color:var(--muted)">Nov 2025 – Present</div>
+          </div>
+
+          <div class="resume-item">
+            <div style="font-weight:700">Sr. Data Analyst, CRM — TRANZACT (Raleigh, NC)</div>
+            <div style="color:var(--muted)">Feb 2025 – Oct 2025</div>
+
+          </div>
+
+          <div class="resume-item">
+            <div style="font-weight:700">Email and SMS Analyst — TRANZACT (Raleigh, NC)</div>
+            <div style="color:var(--muted)">May 2022 – Feb 2025</div>
+
+          </div>
+
+          <div class="resume-item">
+            <div style="font-weight:700">Email Marketing and Production Associate — American Kennel Club</div>
+            <div style="color:var(--muted)">Apr 2021 – May 2022</div>
+
+          </div>
+
+          <div class="section-title" style="margin-top:12px">Education</div>
+          <div style="color:var(--muted)">M.S. in Data Science, Eastern University (Dec 2025)<br/>B.A. in Psychology, North Carolina State University (May 2018)</div>
+
+        </div>
+      `
+    }
+
+    function renderProjects(){
+      // Structure only — user will fill projects later per instructions
+      document.getElementById('app').innerHTML = `
+        <div class="card">
+          <div class="section-title">Projects (structure)</div>
+          <p style="color:var(--muted)">This page is scaffolded for your projects. Add project cards below — each card should link to a specific project page (private pages recommended for course work when required).</p>
+
+          <div style="display:grid;gap:12px;margin-top:12px">
+            <!-- Example project card structure to duplicate -->
+            <div style="padding:12px;border-radius:10px;background:rgba(255,255,255,0.01);border:1px solid rgba(255,255,255,0.02)">
+              <div style="font-weight:700">Project Title</div>
+              <div style="color:var(--muted);font-size:14px">Short description; link to project detail page when ready.</div>
+              <div style="margin-top:8px"><a href="#/project/placeholder" data-link style="color:var(--accent)">Open</a></div>
+            </div>
+          </div>
+        </div>
+      `
+    }
+
+    function renderSpecificProject(){
+      // Leave content blank per request — but keep route ready for linking later.
+      document.getElementById('app').innerHTML = `
+        <div class="card">
+          <div class="section-title">Deployed Model — (page reserved)</div>
+          <p style="color:var(--muted)">This page is reserved for the specific project where your model will be deployed. When you're ready, replace this content with: a plain-language problem description, approach, results, and an interactive widget or iframe to the deployed model.</p>
+
+          <pre class="note">NOTE: Replace this content with your model demo and non-technical explanation. Keep course work private if required.</pre>
+        </div>
+      `
+    }
+
+    // initialize
+    window.addEventListener('hashchange', router)
+    window.addEventListener('load', router)
+  </script>
+</body>
+</html>

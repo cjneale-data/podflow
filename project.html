@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Podcast Chaptering - Project Portfolio</title>
+    <style>
+        /* --- Layout & Typography (Medium Style) --- */
+        body {
+            font-family: 'Charter', 'Georgia', 'Times New Roman', serif;
+            color: #292929;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #ffffff;
+        }
+
+        .container {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        /* --- Headings --- */
+        h1, h2, h3 {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-top: 2em;
+            margin-bottom: 0.5em;
+        }
+
+        h1 { font-size: 2.5rem; letter-spacing: -0.02em; line-height: 1.2;}
+        h2 { font-size: 1.8rem; letter-spacing: -0.01em; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        h3 { font-size: 1.3rem; margin-top: 1.5em; }
+
+        /* --- Text --- */
+        p { font-size: 1.15rem; margin-bottom: 1.5em; }
+        li { font-size: 1.15rem; margin-bottom: 0.5em; }
+        strong { font-weight: 700; }
+
+        /* --- Code Blocks --- */
+        pre {
+            background-color: #f7f7f7;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            padding: 20px;
+            overflow-x: auto;
+            margin: 2em 0;
+            font-size: 0.9rem;
+        }
+
+        code {
+            font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+            color: #333;
+        }
+
+        /* Inline code styling */
+        p code, li code {
+            background-color: #f2f2f2;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-size: 0.95em;
+        }
+
+        /* --- Images --- */
+        img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 3em auto 1em auto;
+            border-radius: 2px;
+            border: 1px solid #eee;
+        }
+
+        .caption {
+            text-align: center;
+            font-family: sans-serif;
+            font-size: 0.85rem;
+            color: #757575;
+            margin-bottom: 3em;
+        }
+
+        /* --- Header --- */
+        .author-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 50px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 20px;
+        }
+        .author-info { font-family: sans-serif; font-size: 0.9rem; }
+        .author-name { font-weight: bold; color: #292929; }
+        .date { color: #757575; margin-top: 4px; }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <h1>Building an AI-Powered Podcast Segmentation Pipeline</h1>
+    
+    <div class="author-header">
+        <div class="author-info">
+            <div class="author-name">Christopher Neale</div>
+            <div class="date">Machine Learning Portfolio · 10 min read</div>
+        </div>
+    </div>
+
+    <p>This project creates an automated pipeline to detect "chapter boundaries" (segment changes) in sports podcasts. Unlike music segmentation, podcast chaptering requires detecting subtle cues like:</p>
+    <ul>
+        <li><strong>Silence:</strong> Pauses between topics.</li>
+        <li><strong>Spectral Change:</strong> The difference in "texture" between a speaker and an ad break or intro music.</li>
+        <li><strong>Energy Shifts:</strong> Volume changes associated with transition effects.</li>
+    </ul>
+    <p>The pipeline uses <strong>Librosa</strong> for signal processing and <strong>XGBoost</strong> for classification.</p>
+
+    <h2>1. Configuration & Pipeline Setup</h2>
+    <p>We define a central configuration dictionary to ensure our sample rates and window sizes remain consistent across training and inference (prediction). This prevents "training-serving skew," where the model in production receives data processed differently than what it was trained on.</p>
+
+    <pre><code>import json
+import pickle
+import warnings
+from pathlib import Path
+import numpy as np
+import pandas as pd
+import librosa
+import xgboost as xgb
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from imblearn.over_sampling import SMOTE
+
+# Global Configuration
+CONFIG = {
+    'audio_dir': 'podcast_audio',
+    'annotations_dir': 'annotations',
+    'output_dir': 'training_data',
+    'models_dir': 'models',
+    'results_dir': 'results',
+    'sample_rate': 16000,
+    'hop_length_sec': 2,            # 2-second resolution per frame
+    'context_window_size': 30,      # Look at surrounding 60s of context
+    'random_state': 42
+}</code></pre>
+
+    <h2>2. Feature Extraction (The "Ears")</h2>
+    <p>We treat audio not as a raw wave, but as a sequence of features. For every 2 seconds of audio, we extract mathematical representations of the sound. Before extraction, it helps to visualize what the model "sees" using a spectrogram.</p>
+
+    <img src="results/spectrogram.png" alt="Spectrogram Visualization">
+    <div class="caption">Figure 1: A spectrogram visualizing audio frequencies over time. Silence appears as dark vertical gaps; music appears as bright, dense patterns.</div>
+
+    <p>The code below extracts physical characteristics (Energy, Zero-Crossing Rate) and spectral characteristics (MFCCs) to capture the "texture" of the sound.</p>
+
+    <pre><code>def extract_features(audio_path, duration_sec=None):
+    sr = CONFIG['sample_rate']
+    hop_sec = CONFIG['hop_length_sec']
+    
+    print(f"Loading audio: {Path(audio_path).name}...")
+    y, sr = librosa.load(audio_path, sr=sr, duration=duration_sec)
+
+    hop_length = max(1, int(sr * hop_sec))
+    frame_length = min(2048, len(y))
+    
+    # 1. Physical Characteristics
+    energy = librosa.feature.rms(y=y, frame_length=frame_length, hop_length=hop_length)[0]
+    zcr = librosa.feature.zero_crossing_rate(y, hop_length=hop_length)[0]
+    onset_env = librosa.onset.onset_strength(y=y, sr=sr, hop_length=hop_length)
+    
+    # 2. Spectral Characteristics (Texture/Timbre)
+    centroid = librosa.feature.spectral_centroid(y=y, sr=sr, hop_length=hop_length)[0]
+    flatness = librosa.feature.spectral_flatness(y=y, hop_length=hop_length)[0]
+    
+    # 3. MFCCs (Mel-frequency cepstral coefficients)
+    # Captures the "shape" of the sound envelope (human voice vs. other sounds)
+    mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13, hop_length=hop_length)
+    
+    # [Data alignment code omitted for brevity...]
+
+    features = {
+        "energy": energy, "zcr": zcr, "centroid": centroid, 
+        "flatness": flatness, "onset_strength": onset_env
+    }
+    for i in range(13):
+        features[f"mfcc_{i+1}"] = mfcc[i]
+
+    return pd.DataFrame(features), librosa.get_duration(y=y, sr=sr)</code></pre>
+
+    <h2>3. Feature Engineering (The "Context")</h2>
+    <p>Raw features aren't enough. A single second of silence doesn't mean a chapter ended; however, <strong>6 seconds of silence followed by high-energy music</strong> strongly suggests a transition. We use "Rolling Windows" to give the model memory of the past and future.</p>
+
+    <pre><code>def engineer_features(df_raw):
+    df = df_raw.copy()
+    
+    # 1. Deltas (Rate of Change)
+    for col in ['energy', 'onset_strength', 'flatness']:
+        df[f'delta_{col}'] = df[col].diff().fillna(0)
+
+    # 2. Context Windows (Rolling Statistics)
+    # We look at 60 seconds (Short) and 180 seconds (Long) to establish a baseline
+    short_window = 12 # ~24 seconds
+    
+    for col in ['energy', 'zcr']:
+        df[f'{col}_rolling_mean'] = df[col].rolling(window=short_window).mean().fillna(0)
+        df[f'{col}_deviation'] = df[col] - df[f'{col}_rolling_mean']
+        
+    # 3. Future vs Past Contrast
+    # Compares the texture 2 frames ahead vs 2 frames behind
+    lag = 2
+    for col in ['energy']:
+        future = df[col].shift(-lag)
+        past = df[col].shift(lag)
+        df[f'{col}_future_past_diff'] = (future - past).abs().fillna(0)
+
+    return df.fillna(0)</code></pre>
+
+    <h2>4. Model Training with XGBoost</h2>
+    <p>Chapter boundaries are rare events (perhaps 10 seconds out of a 60-minute episode). This creates a massive class imbalance. If we trained a standard model, it would achieve 99% accuracy by simply guessing "No Boundary" every time.</p>
+    <p>To solve this, we use <strong>SMOTE</strong> (Synthetic Minority Over-sampling Technique) to artificially balance the training data by creating synthetic examples of chapter boundaries.</p>
+
+    <img src="results/smote_visual.png" alt="SMOTE Data Visualization">
+    <div class="caption">Figure 2: Visualization of SMOTE. The algorithm (right) creates synthetic data points between existing minority samples to balance the dataset.</div>
+
+    <pre><code># Prepare Data
+X = df[feature_cols].fillna(0)
+y = df['is_chapter_boundary']
+
+# Split by Episode to prevent data leakage
+train_eps, test_eps = train_test_split(unique_eps, test_size=0.2, random_state=42)
+X_train = X[df['episode_id'].isin(train_eps)]
+y_train = y[df['episode_id'].isin(train_eps)]
+
+# Scale Data
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+
+# Apply SMOTE to handle imbalance
+print(f"Original Positive Samples: {sum(y_train)}")
+smote = SMOTE(sampling_strategy=0.2, random_state=42)
+X_train_smote, y_train_smote = smote.fit_resample(X_train_scaled, y_train)
+
+# Train XGBoost
+model = xgb.XGBClassifier(
+    n_estimators=300,
+    max_depth=4,
+    learning_rate=0.03,
+    eval_metric='aucpr',
+    random_state=42
+)
+model.fit(X_train_smote, y_train_smote)</code></pre>
+
+    <h2>5. Evaluation & Feature Importance</h2>
+    <p>Which cues did the model find most useful? By analyzing the feature importance, we found that <code>energy_rolling_mean</code> and <code>spectral_contrast</code> were the strongest indicators of a chapter boundary.</p>
+
+    <img src="results/feature_importance.png" alt="Feature Importance Plot">
+    <div class="caption">Figure 3: Top audio features used by the XGBoost model to detect boundaries.</div>
+
+    <h2>6. Inference Pipeline</h2>
+    <p>Finally, we wrap the entire process into a single function that takes a raw MP3 file and outputs the final JSON timestamps.</p>
+
+    <pre><code>def predict_chapters(audio_path):
+    # 1. Pipeline
+    raw, duration = extract_features(audio_path)
+    engineered = engineer_features(raw)
+    X_input = engineered[feature_cols].fillna(0)
+    
+    # 2. Predict
+    X_scaled = scaler.transform(X_input)
+    probs = model.predict_proba(X_scaled)[:, 1]
+    
+    # 3. Post-Processing (Minimum Duration Enforcement)
+    predictions = (probs >= 0.7).astype(int)
+    boundary_frames = np.where(predictions == 1)[0]
+    timestamps = boundary_frames * CONFIG['hop_length_sec']
+    
+    final_chapters = []
+    last_ts = 0
+    
+    for ts in timestamps:
+        if ts - last_ts > 300: # Minimum 5 minutes between chapters
+            final_chapters.append(ts)
+            last_ts = ts
+            
+    return json.dumps(final_chapters, indent=4)</code></pre>
+
+</div>
+
+</body>
+</html>

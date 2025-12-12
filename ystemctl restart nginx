@@ -1,0 +1,21 @@
+[0;1;32m●[0m podcastapi.service - Gunicorn instance to serve Podcast API
+     Loaded: loaded (]8;;file://ubuntu-s-1vcpu-2gb-70gb-intel-nyc3-01/etc/systemd/system/podcastapi.service/etc/systemd/system/podcastapi.service]8;;; [0;1;38;5;185mdisabled[0m; preset: [0;1;32menabled[0m)
+     Active: [0;1;32mactive (running)[0m since Wed 2025-12-10 00:15:03 UTC; 6s ago
+   Main PID: 45694 (gunicorn)
+      Tasks: 4 (limit: 2318)
+     Memory: 63.7M (peak: 63.7M)
+        CPU: 1.518s
+     CGroup: /system.slice/podcastapi.service
+             ├─[0;38;5;245m45694 /root/app/venv/bin/python3 /root/app/venv/bin/gunicorn --workers 3 --bind unix:podcastapi.sock -m 007 api:app[0m
+             ├─[0;38;5;245m45695 /root/app/venv/bin/python3 /root/app/venv/bin/gunicorn --workers 3 --bind unix:podcastapi.sock -m 007 api:app[0m
+             ├─[0;38;5;245m45696 /root/app/venv/bin/python3 /root/app/venv/bin/gunicorn --workers 3 --bind unix:podcastapi.sock -m 007 api:app[0m
+             └─[0;38;5;245m45697 /root/app/venv/bin/python3 /root/app/venv/bin/gunicorn --workers 3 --bind unix:podcastapi.sock -m 007 api:app[0m
+
+Dec 10 00:15:03 ubuntu-s-1vcpu-2gb-70gb-intel-nyc3-01 systemd[1]: Started podcastapi.service - Gunicorn instance to serve Podcast API.
+Dec 10 00:15:03 ubuntu-s-1vcpu-2gb-70gb-intel-nyc3-01 gunicorn[45694]: [2025-12-10 00:15:03 +0000] [45694] [INFO] Starting gunicorn 23.0.0
+Dec 10 00:15:03 ubuntu-s-1vcpu-2gb-70gb-intel-nyc3-01 gunicorn[45694]: [2025-12-10 00:15:03 +0000] [45694] [INFO] Listening at: unix:podcastapi.sock (45694)
+Dec 10 00:15:03 ubuntu-s-1vcpu-2gb-70gb-intel-nyc3-01 gunicorn[45694]: [2025-12-10 00:15:03 +0000] [45694] [INFO] Using worker: sync
+Dec 10 00:15:03 ubuntu-s-1vcpu-2gb-70gb-intel-nyc3-01 gunicorn[45695]: [2025-12-10 00:15:03 +0000] [45695] [INFO] Booting worker with pid: 45695
+Dec 10 00:15:03 ubuntu-s-1vcpu-2gb-70gb-intel-nyc3-01 gunicorn[45696]: [2025-12-10 00:15:03 +0000] [45696] [INFO] Booting worker with pid: 45696
+Dec 10 00:15:03 ubuntu-s-1vcpu-2gb-70gb-intel-nyc3-01 gunicorn[45697]: [2025-12-10 00:15:03 +0000] [45697] [INFO] Booting worker with pid: 45697
+Dec 10 00:15:09 ubuntu-s-1vcpu-2gb-70gb-intel-nyc3-01 systemd[1]: [0;1;38;5;185m[0;1;39m[0;1;38;5;185m]8;;file://ubuntu-s-1vcpu-2gb-70gb-intel-nyc3-01/etc/systemd/system/podcastapi.service/etc/systemd/system/podcastapi.service]8;;:1: Assignment outside of section. Ignoring.[0m

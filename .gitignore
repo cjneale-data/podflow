@@ -1,0 +1,16 @@
+# Secrets
+.env
+
+# Python junk
+venv/
+__pycache__/
+*.pyc
+
+# Data & Models (Too big for GitHub)
+*.mp3
+models/*.pth
+models/*.pkl
+*.log
+
+# OS Junk
+.DS_Store

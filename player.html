@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PodFlow App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #111827; 
+            font-family: 'Inter', sans-serif;
+        }
+        
+        input[type=range] {
+            -webkit-appearance: none;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #ffffff;
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #4B5563;
+            border-radius: 2px;
+        }
+        
+        .spin-slow { animation: spin 10s linear infinite; }
+        .spin-paused { animation-play-state: paused; }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .glass-panel {
+            background: rgba(31, 41, 55, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Filter Panel Animation */
+        #filter-panel {
+            transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
+        }
+        .filter-hidden {
+            transform: translateY(100%);
+            opacity: 0;
+            pointer-events: none;
+        }
+        .filter-visible {
+            transform: translateY(0);
+            opacity: 1;
+            pointer-events: auto;
+        }
+        
+        .tags-container::-webkit-scrollbar {
+            height: 4px;
+        }
+        .tags-container::-webkit-scrollbar-thumb {
+            background-color: #4B5563;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="h-screen flex items-center justify-center text-white overflow-hidden relative">
+
+    <div id="filter-panel" class="absolute inset-0 z-50 glass-panel filter-hidden flex flex-col p-6 m-4 rounded-3xl bg-gray-900/95">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-lg font-bold text-white">Personalize</h3>
+            <button onclick="toggleFilterPanel()" class="text-gray-400 hover:text-white">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto pr-2">
+            <div class="mb-6">
+                <label class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3 block">Genre</label>
+                <select id="genre-select" class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg p-3 text-sm focus:ring-2 focus:ring-purple-500 outline-none">
+                    <option value="">All Genres</option>
+                </select>
+            </div>
+
+            <div class="mb-6">
+                <label class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3 block">Topics</label>
+                <div id="topic-tags" class="flex flex-wrap gap-2">
+                </div>
+            </div>
+        </div>
+
+        <button onclick="applyFilters()" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-purple-500/30 mt-4">
+            Apply Filters
+        </button>
+    </div>
+
+    <div class="glass-panel w-full max-w-md rounded-3xl p-6 shadow-2xl relative overflow-hidden h-full max-h-[800px] flex flex-col justify-between">
+        
+        <div id="bg-glow" class="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-purple-900 to-blue-900 opacity-50 -z-10 transition-colors duration-1000"></div>
+
+        <div class="flex justify-between items-center mb-4">
+            <button onclick="toggleFilterPanel()" class="text-purple-400 hover:text-white transition" title="Filter Content">
+                <i class="fas fa-sliders-h"></i>
+            </button>
+            <span class="text-xs font-bold tracking-widest text-gray-400 uppercase">Chapter Shuffle</span>
+            <button class="text-gray-400 hover:text-white"><i class="fas fa-ellipsis-h"></i></button>
+        </div>
+
+        <div class="flex justify-center mb-6 relative flex-shrink-0">
+            <div class="w-56 h-56 sm:w-64 sm:h-64 rounded-full overflow-hidden shadow-xl border-4 border-gray-800 relative z-10">
+                <img id="podcast-art" src="https://placehold.co/400x400/1a1a1a/ffffff?text=Podcast" alt="Album Art" class="w-full h-full object-cover spin-slow spin-paused">
+                <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-gray-900 rounded-full border-2 border-gray-700"></div>
+            </div>
+        </div>
+
+        <div class="text-center mb-4 flex-shrink-0">
+            <h2 id="chapter-title" class="text-xl sm:text-2xl font-bold mb-1 truncate px-2">Loading...</h2>
+            <p id="podcast-title" class="text-gray-400 text-sm mb-1 truncate px-4">Podcast Title</p>
+            <p id="episode-title" class="text-purple-400 text-xs truncate px-8">Episode Title</p>
+        </div>
+
+        <div class="mb-4 flex-shrink-0">
+            <input type="range" id="seek-slider" class="w-full h-1 mb-2 bg-gray-600 rounded-lg appearance-none cursor-pointer" min="0" value="0" step="0.1">
+            <div class="flex justify-between text-xs text-gray-400 font-mono">
+                <span id="current-time">0:00</span>
+                <span id="duration-time">0:00</span>
+            </div>
+        </div>
+
+        <div class="flex justify-between items-center px-4 mb-4 flex-shrink-0">
+            <button id="btn-shuffle" class="text-purple-400 hover:text-purple-300 transition" title="New Random Episode">
+                <i class="fas fa-random"></i>
+            </button>
+            <button id="btn-prev" class="text-gray-300 hover:text-white text-2xl transition">
+                <i class="fas fa-step-backward"></i>
+            </button>
+            <button id="btn-play" class="w-16 h-16 bg-white text-black rounded-full flex items-center justify-center hover:scale-105 transition shadow-lg shadow-purple-500/50">
+                <i class="fas fa-play text-xl ml-1"></i>
+            </button>
+            <button id="btn-next" class="text-gray-300 hover:text-white text-2xl transition">
+                <i class="fas fa-step-forward"></i>
+            </button>
+            
+            <button id="btn-speed" class="text-gray-400 hover:text-white font-bold text-xs w-8 transition flex justify-center items-center" title="Playback Speed">
+                1x
+            </button>
+        </div>
+        
+        <div class="mt-2 border-t border-gray-700 pt-3 flex-shrink-0">
+            <div class="flex justify-between items-center mb-1">
+                <p class="text-xs text-gray-500 uppercase font-bold">Up Next</p>
+                <div id="active-filters" class="flex gap-1 hidden">
+                    <span class="text-[10px] bg-purple-900 text-purple-200 px-2 py-0.5 rounded-full" id="filter-badge">Filtered</span>
+                </div>
+            </div>
+            <div id="next-up-text" class="text-sm text-gray-300 truncate">...</div>
+        </div>
+
+    </div>
+
+    <audio id="audio-player" preload="auto"></audio>
+
+    <script>
+        // State
+        let playlist = [];
+        let currentIndex = 0;
+        let isPlaying = false;
+        const speeds = [1, 1.2, 1.5, 2];
+        let speedIndex = 0;
+        
+        // Filter State
+        let selectedGenre = "";
+        let selectedTopic = "";
+
+        // --- FIXED API URL FOR LOCALHOST ---
+        const API_BASE = '/api'; 
+
+        // Elements
+        const audio = document.getElementById('audio-player');
+        const artImg = document.getElementById('podcast-art');
+        const chapTitle = document.getElementById('chapter-title');
+        const podTitle = document.getElementById('podcast-title');
+        const epTitle = document.getElementById('episode-title');
+        const nextUpText = document.getElementById('next-up-text');
+        const slider = document.getElementById('seek-slider');
+        const currTimeText = document.getElementById('current-time');
+        const durTimeText = document.getElementById('duration-time');
+        const btnPlay = document.getElementById('btn-play');
+        const btnNext = document.getElementById('btn-next');
+        const btnPrev = document.getElementById('btn-prev');
+        const btnShuffle = document.getElementById('btn-shuffle');
+        const btnSpeed = document.getElementById('btn-speed');
+        const bgGlow = document.getElementById('bg-glow');
+        const filterPanel = document.getElementById('filter-panel');
+        const activeFiltersBadge = document.getElementById('active-filters');
+
+        // --- Core Player Logic ---
+
+        function updateUI(status) {
+            chapTitle.innerText = status;
+            podTitle.innerText = '';
+            epTitle.innerText = '';
+            slider.value = 0;
+            currTimeText.innerText = '0:00';
+            durTimeText.innerText = '0:00';
+            btnPlay.disabled = true;
+            btnNext.disabled = true;
+            btnPrev.disabled = true;
+            artImg.src = "https://placehold.co/400x400/333/fff?text=Loading...";
+            bgGlow.style.opacity = 0.5;
+        }
+
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function loadChapter(index) {
+            if (!playlist || playlist.length === 0) {
+                updateUI('No Chapters Found');
+                nextUpText.innerText = "Try changing your filters.";
+                return;
+            }
+            
+            if (index >= playlist.length) index = 0;
+            const chapter = playlist[index];
+            currentIndex = index;
+
+            chapTitle.innerText = chapter.chapter_title;
+            podTitle.innerText = chapter.podcast_title;
+            epTitle.innerText = chapter.episode_title;
+            
+            artImg.src = chapter.artwork_url || "https://placehold.co/400x400/333/fff?text=No+Art";
+            artImg.onerror = () => { artImg.src = "https://placehold.co/400x400/333/fff?text=Podcast"; };
+
+            nextUpText.innerText = "Next: Random Show Shuffle";
+
+            if (audio.src !== chapter.audio_url) {
+                audio.src = chapter.audio_url;
+            }
+            
+            // Re-apply speed setting when source changes
+            audio.playbackRate = speeds[speedIndex];
+            
+            audio.currentTime = chapter.start_time;
+            slider.min = chapter.start_time;
+            slider.max = chapter.end_time;
+            slider.value = chapter.start_time;
+            
+            btnPlay.disabled = false;
+            btnNext.disabled = false;
+            btnPrev.disabled = false;
+            
+            updateTimeDisplay();
+
+            if (isPlaying) {
+                audio.play();
+                artImg.classList.remove('spin-paused');
+            }
+        }
+
+        function togglePlay() {
+            if (audio.paused) {
+                audio.play().then(() => {
+                    isPlaying = true;
+                    btnPlay.innerHTML = '<i class="fas fa-pause text-xl"></i>';
+                    artImg.classList.remove('spin-paused');
+                }).catch(e => console.error("Playback error:", e));
+            } else {
+                audio.pause();
+                isPlaying = false;
+                btnPlay.innerHTML = '<i class="fas fa-play text-xl ml-1"></i>';
+                artImg.classList.add('spin-paused');
+            }
+        }
+
+        function toggleSpeed() {
+            speedIndex = (speedIndex + 1) % speeds.length;
+            const newSpeed = speeds[speedIndex];
+            audio.playbackRate = newSpeed;
+            btnSpeed.innerText = newSpeed + 'x';
+            
+            if (newSpeed > 1) {
+                btnSpeed.classList.add('text-white');
+                btnSpeed.classList.remove('text-gray-400');
+            } else {
+                btnSpeed.classList.add('text-gray-400');
+                btnSpeed.classList.remove('text-white');
+            }
+        }
+
+        function nextChapter() {
+            if (playlist.length === 0) return;
+            let nextIndex = currentIndex + 1;
+            if (nextIndex >= playlist.length) nextIndex = 0;
+            loadChapter(nextIndex);
+        }
+
+        function prevChapter() {
+            if (playlist.length === 0) return;
+            let prevIndex = currentIndex - 1;
+            if (prevIndex < 0) prevIndex = playlist.length - 1;
+            loadChapter(prevIndex);
+        }
+
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+        }
+
+        function updateTimeDisplay() {
+            if (playlist.length === 0) return;
+            const chapter = playlist[currentIndex];
+            const chapterDuration = chapter.end_time - chapter.start_time;
+            const currentProgress = Math.max(0, audio.currentTime - chapter.start_time);
+            
+            currTimeText.innerText = formatTime(currentProgress);
+            durTimeText.innerText = formatTime(chapterDuration);
+
+            if (document.activeElement !== slider) slider.value = audio.currentTime;
+            
+            const percentage = ((audio.currentTime - chapter.start_time) / chapterDuration) * 100;
+            slider.style.background = `linear-gradient(to right, #8B5CF6 0%, #8B5CF6 ${percentage}%, #4B5563 ${percentage}%, #4B5563 100%)`;
+        }
+
+        async function fetchNewPlaylist() {
+            updateUI('Loading...');
+            
+            let url = `${API_BASE}/random-chapters`;
+            const params = new URLSearchParams();
+            if (selectedGenre) params.append('genre', selectedGenre);
+            if (selectedTopic) params.append('topic', selectedTopic);
+            
+            if (params.toString()) url += `?${params.toString()}`;
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (!Array.isArray(data) || data.length === 0) {
+                    updateUI('No Results');
+                    nextUpText.innerText = `No episodes found for ${selectedGenre || 'any genre'} / ${selectedTopic || 'any topic'}.`;
+                    playlist = [];
+                    return;
+                }
+
+                playlist = data;
+                shuffle(playlist);
+                loadChapter(0);
+                
+                if (selectedGenre || selectedTopic) {
+                    activeFiltersBadge.classList.remove('hidden');
+                    document.getElementById('filter-badge').innerText = `${selectedGenre || ''} ${selectedTopic || ''}`.trim();
+                } else {
+                    activeFiltersBadge.classList.add('hidden');
+                }
+
+            } catch (err) {
+                console.error(err);
+                updateUI('API Error');
+            }
+        }
+
+        // --- Filtering Logic ---
+
+        function toggleFilterPanel() {
+            filterPanel.classList.toggle('filter-hidden');
+            filterPanel.classList.toggle('filter-visible');
+            if (filterPanel.classList.contains('filter-visible')) {
+                loadFilterOptions();
+            }
+        }
+
+        async function loadFilterOptions() {
+            const genreSelect = document.getElementById('genre-select');
+            if (genreSelect.options.length > 1) return; 
+
+            try {
+                const res = await fetch(`${API_BASE}/filter-options`);
+                const data = await res.json();
+
+                data.genres.forEach(g => {
+                    const opt = document.createElement('option');
+                    opt.value = g;
+                    opt.innerText = g;
+                    genreSelect.appendChild(opt);
+                });
+
+                const tagsContainer = document.getElementById('topic-tags');
+                tagsContainer.innerHTML = ''; 
+                
+                data.topics.forEach(t => {
+                    const btn = document.createElement('button');
+                    btn.className = `px-3 py-1.5 rounded-full text-xs border border-gray-600 hover:border-purple-500 hover:text-purple-400 transition topic-tag`;
+                    btn.innerText = t;
+                    btn.onclick = () => selectTopic(btn, t);
+                    tagsContainer.appendChild(btn);
+                });
+
+            } catch (e) {
+                console.error("Failed to load filters", e);
+            }
+        }
+
+        function selectTopic(btn, topic) {
+            const allTags = document.querySelectorAll('.topic-tag');
+            
+            if (selectedTopic === topic) {
+                selectedTopic = "";
+                btn.classList.remove('bg-purple-600', 'border-purple-600', 'text-white');
+                btn.classList.add('border-gray-600');
+            } else {
+                allTags.forEach(t => {
+                    t.classList.remove('bg-purple-600', 'border-purple-600', 'text-white');
+                    t.classList.add('border-gray-600');
+                });
+                selectedTopic = topic;
+                btn.classList.remove('border-gray-600');
+                btn.classList.add('bg-purple-600', 'border-purple-600', 'text-white');
+            }
+        }
+
+        function applyFilters() {
+            const genreSelect = document.getElementById('genre-select');
+            selectedGenre = genreSelect.value;
+            toggleFilterPanel(); 
+            fetchNewPlaylist(); 
+        }
+
+        // --- Event Listeners ---
+
+        audio.addEventListener('loadedmetadata', () => {
+            if (playlist.length > 0) loadChapter(currentIndex);
+        });
+
+        audio.addEventListener('timeupdate', () => {
+            if (playlist.length === 0) return;
+            const chapter = playlist[currentIndex];
+            updateTimeDisplay();
+
+            if (audio.currentTime >= chapter.end_time) {
+                fetchNewPlaylist();
+            }
+        });
+
+        slider.addEventListener('input', () => {
+            audio.currentTime = parseFloat(slider.value);
+            updateTimeDisplay();
+        });
+
+        btnPlay.addEventListener('click', togglePlay);
+        btnNext.addEventListener('click', fetchNewPlaylist); 
+        btnPrev.addEventListener('click', prevChapter);
+        
+        btnSpeed.addEventListener('click', toggleSpeed);
+        
+        btnShuffle.addEventListener('click', () => {
+            fetchNewPlaylist(); 
+        });
+
+        // Init
+        updateUI('Initializing...');
+        fetchNewPlaylist();
+
+    </script>
+</body>
+</html>
