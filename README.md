@@ -21,8 +21,8 @@
 
 The system operates on a cyclical 24-hour schedule:
 
-1.  **Ingestion (2:00 AM):** `ingest_podcasts.py` parses RSS feeds and updates the PostgreSQL database with new episode metadata.
-2.  **Processing (4:00 AM):** `batch_process.py` performs the heavy lifting:
+1.  **Ingestion:** `ingest_podcasts.py` parses RSS feeds and updates the PostgreSQL database with new episode metadata.
+2.  **Processing:** `batch_process.py` performs the heavy lifting:
     * Downloads new MP3 files.
     * Extracts acoustic features (MFCCs, Spectral Contrast, Energy) using `librosa`.
     * Runs inference using the CRNN model to generate chapter timestamps.
